@@ -14,7 +14,13 @@ class SimpleDividerUnitTester extends FlatSpec with ChiselScalatestTester with M
     y <- testValuesRealShort
   } yield (x, y)
 
+  def twosComplement(a: BigInt) = ((~a+1) & BigInt("ffffffffffffffff", 16))
+  def addSign(a: BigInt) = if (a.testBit(63)) -twosComplement(a) else a
+  def removeSign(a: BigInt) = if (a < 0) twosComplement(-a) else a
+
   def divide(a: BigInt, b: BigInt): BigInt = (a / b)
+
+  def divideSigned(a: BigInt, b: BigInt): BigInt = removeSign(divide(addSign(a), addSign(b)))
 
   def divideExtended(a: BigInt, b: BigInt): BigInt = {
     val d = ((a << 64) / b)
@@ -48,6 +54,10 @@ class SimpleDividerUnitTester extends FlatSpec with ChiselScalatestTester with M
 
       m.io.in.bits.extended.poke(true.B)
       runOneTest(m, divideExtended)
+
+      m.io.in.bits.extended.poke(false.B)
+      m.io.in.bits.signed.poke(true.B)
+      runOneTest(m, divideSigned)
     }
 
   }
